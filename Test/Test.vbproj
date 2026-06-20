@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Test</RootNamespace>
+    <TargetFramework>net10.0</TargetFramework>
+    <UserSecretsId>27cceab5-9467-42a3-beae-5713e765703f</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="6.0.1" />
+    <PackageReference Include="Spectre.Console" Version="0.57.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Library\Library.vbproj" />
+  </ItemGroup>
+
+</Project>

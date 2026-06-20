@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path=".gitignore" />
+    <File Path="READMe.md" />
+  </Folder>
+  <Project Path="Library/Library.vbproj" />
+  <Project Path="Test/Test.vbproj" />
+</Solution>
