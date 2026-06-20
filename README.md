@@ -2,7 +2,7 @@
 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Y0F020WAJC)
 
-`Kindroid.Library` is an unofficial .NET client library for the [Kindroid AI](https://kindroid.ai) public REST API written in Visual Basic .NET. It wraps every documented endpoint — single-AI chat, group chat, streaming replies, and chat history management — in a single `KindroidClient` class, with each operation exposed in **synchronous**, **async**, and (where supported) **streaming** form.
+`Kindroid.Library` is an unofficial .NET client library for the [Kindroid AI](https://kindroid.ai) [public REST API](https://kindroid.ai/docs/article/api-documentation/) written in Visual Basic .NET. It wraps every documented endpoint — single-AI chat, group chat, streaming replies, and chat history management — in a single `KindroidClient` class, with each operation exposed in **synchronous**, **async**, and (where supported) **streaming** form.
 
 > **Note:** This is a third-party / community client, not an official Kindroid SDK.
 
@@ -190,8 +190,8 @@ catch (KindroidException^ ex)
 
 ## License
 
-This project is made available under the [MIT License](LICENSE).
+This project is made available under the [MIT License](LICENSE.txt).
 
 ## Contributing
 
-Issues and pull requests are welcome. Since this wraps a third-party API, please double-check any endpoint-behavior changes against the [official Kindroid API docs](https://docs.kindroid.ai) before submitting.
+Issues and pull requests are welcome. Since this wraps a third-party API, please double-check any endpoint-behavior changes against the [official Kindroid API docs](https://kindroid.ai/docs/article/api-documentation/) before submitting.
