@@ -1,4 +1,5 @@
-﻿Imports System.Text.Json.Serialization
+﻿Imports System.Collections.ObjectModel
+Imports System.Text.Json.Serialization
 
 Namespace Models
 
@@ -30,6 +31,7 @@ Namespace Models
         ''' <returns>A <see cref="String"/> representing the URL of a voice message.</returns>
         <JsonPropertyName("audio_url")>
         <JsonIgnore(Condition:=JsonIgnoreCondition.WhenWritingNull)>
+        <System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1056:URI-like properties should not be strings", Justification:="This is a JSON request/response field for the Kindroid API. Changing to Uri would be a breaking API change.")>
         Public Property AudioUrl As String = Nothing
 
     End Class
@@ -169,10 +171,11 @@ Namespace Models
         ''' <summary>
         ''' The AI IDs in the group roster. At least one when provided.
         ''' </summary>
-        ''' <returns>A <see cref="List(Of String)"/> representing the AI IDs in the group roster.</returns>
+        ''' <returns>A <see cref="Collection(Of String)"/> representing the AI IDs in the group roster.</returns>
         <JsonPropertyName("ai_list")>
         <JsonIgnore(Condition:=JsonIgnoreCondition.WhenWritingNull)>
-        Public Property AiList As List(Of String) = Nothing
+        <System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2227:Collection properties should be read-only", Justification:="Optional nullable request field that callers need to assign. Making it read-only would prevent setting it to null (omitting from JSON).")>
+        Public Property AiList As Collection(Of String) = Nothing
 
         ''' <summary>
         ''' The new name for the group. If not provided, the name will not be updated.
