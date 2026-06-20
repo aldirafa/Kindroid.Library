@@ -7,7 +7,7 @@
 > **Note:** This is a third-party / community client, not an official Kindroid SDK.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![.NET](https://img.shields.io/badge/.NET-8.0%2B-512BD4)](https://dotnet.microsoft.com/)
+[![.NET](https://img.shields.io/badge/.NET-10.0-512BD4)](https://dotnet.microsoft.com/)
 [![Language](https://img.shields.io/badge/Language-VB.NET-purple)](https://learn.microsoft.com/dotnet/visual-basic/)
 
 📖 **Full documentation lives in the [Wiki](../../wiki)** — this README only covers the basics.
