@@ -19,6 +19,30 @@ Namespace Exceptions
         Public ReadOnly Property ResponseBody As String
 
         ''' <summary>
+        ''' Initializes a new instance of the <see cref="KindroidException"/> class.
+        ''' </summary>
+        Public Sub New()
+            MyBase.New()
+        End Sub
+
+        ''' <summary>
+        ''' Initializes a new instance of the <see cref="KindroidException"/> class with a specified error message.
+        ''' </summary>
+        ''' <param name="message">The message that describes the error.</param>
+        Public Sub New(message As String)
+            MyBase.New(message)
+        End Sub
+
+        ''' <summary>
+        ''' Initializes a new instance of the <see cref="KindroidException"/> class with a specified error message and a reference to the inner exception that is the cause of this exception.
+        ''' </summary>
+        ''' <param name="message">The message that describes the error.</param>
+        ''' <param name="innerException">The exception that is the cause of the current exception.</param>
+        Public Sub New(message As String, innerException As Exception)
+            MyBase.New(message, innerException)
+        End Sub
+
+        ''' <summary>
         ''' Initializes a new instance of the <see cref="KindroidException"/> class with the specified status code and response body.
         ''' </summary>
         ''' <param name="statusCode">The HTTP status code returned by the API.</param>

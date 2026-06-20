@@ -1,4 +1,5 @@
-﻿Imports System.Text.Json.Serialization
+﻿Imports System.Collections.ObjectModel
+Imports System.Text.Json.Serialization
 
 Namespace Models
 
@@ -117,7 +118,7 @@ Namespace Models
         ''' </summary>
         ''' <returns>A list of strings representing the URLs of images attached to/sent with the message.</returns>
         <JsonPropertyName("image_urls")>
-        Public Property ImageUrls As List(Of String) = New List(Of String)()
+        Public ReadOnly Property ImageUrls As Collection(Of String) = New Collection(Of String)()
 
         ''' <summary>
         ''' A description of the image(s) attached to/sent with the message, if any.
@@ -147,6 +148,7 @@ Namespace Models
         ''' </summary>
         ''' <returns>A <see cref="String"/> representing the URL that was attached to/sent with the message, if any.</returns>
         <JsonPropertyName("link_url")>
+        <System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1056:URI-like properties should not be strings", Justification:="This is a JSON response field from the Kindroid API. Changing to Uri could break deserialization of non-standard values returned by the server.")>
         Public Property LinkUrl As String = String.Empty
 
         ''' <summary>
@@ -196,7 +198,7 @@ Namespace Models
         ''' </summary>
         ''' <returns>A list of <see cref="ChatMessage"/> objects representing the messages in the current page.</returns>
         <JsonPropertyName("messages")>
-        Public Property Messages As List(Of ChatMessage) = New List(Of ChatMessage)()
+        Public ReadOnly Property Messages As Collection(Of ChatMessage) = New Collection(Of ChatMessage)()
 
         ''' <summary>
         ''' Pagination metadata for the current page of messages.
