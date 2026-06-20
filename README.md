@@ -25,7 +25,7 @@
 
 ## Requirements
 
-- .NET 8.0 or later (the library uses `ArgumentNullException.ThrowIfNullOrWhiteSpace`, introduced in .NET 8)
+- .NET 10.0 (the project's TargetFramework is net10.0, so consuming projects need to target .NET 10 too)
 - A Kindroid API key (`kn_…`) — generate one from your Kindroid account settings
 
 ## Installation
