@@ -1,0 +1,83 @@
+name: Publish to NuGet
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: read
+
+# Avoid two publishes racing each other if tags get pushed in quick succession.
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore Kindroid.slnx
+
+      - name: Run tests
+        run: dotnet test Test/Test.vbproj --configuration Release --no-restore
+
+  publish:
+    name: Pack & Publish
+    needs: test # publish only runs if the test job above succeeds
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # required so NuGet Trusted Publishing can request a GitHub OIDC token
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"   # e.g. v1.2.3
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"   # -> 1.2.3
+
+      - name: Restore
+        run: dotnet restore Library/Library.vbproj
+
+      - name: Pack
+        run: >
+          dotnet pack Library/Library.vbproj
+          --configuration Release
+          --no-restore
+          -p:Version=${{ steps.version.outputs.version }}
+          --output ./nupkg
+
+      # Trusted Publishing: exchanges this job's GitHub OIDC token for a
+      # short-lived (~1 hour) NuGet API key. Nothing long-lived is stored
+      # in GitHub Secrets. Requires a Trusted Publishing policy to be set
+      # up on nuget.org first - see the wiki/README setup notes.
+      - name: NuGet login (OIDC -> temporary API key)
+        id: nuget-login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
+      - name: Push to NuGet.org
+        run: >
+          dotnet nuget push ./nupkg/*.nupkg
+          --api-key ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate
