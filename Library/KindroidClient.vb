@@ -1,4 +1,5 @@
-﻿Imports System.Net.Http
+﻿Imports System.ComponentModel
+Imports System.Net.Http
 Imports System.Net.Http.Headers
 Imports System.Text
 Imports System.Text.Json
@@ -100,9 +101,11 @@ Public Class KindroidClient
         Dim completionOption = If(streamResponse,
             HttpCompletionOption.ResponseHeadersRead,
             HttpCompletionOption.ResponseContentRead)
+        Dim httpReq = New HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}{path}") With {.Content = content}
         Dim response = Await _http.SendAsync(
-            New HttpRequestMessage(HttpMethod.Post, $"{_baseUrl}{path}") With {.Content = content}, completionOption, cancellationToken)
-        Await EnsureSuccessAsync(response, cancellationToken)
+            httpReq, completionOption, cancellationToken).ConfigureAwait(False)
+        Await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(False)
+        httpReq.Dispose()
         Return response
     End Function
 
@@ -112,8 +115,8 @@ Public Class KindroidClient
     ''' </summary>
     Private Async Function GetAsync(relativeUrl As String,
                                     cancellationToken As CancellationToken) As Task(Of HttpResponseMessage)
-        Dim response = Await _http.GetAsync($"{_baseUrl}{relativeUrl}", cancellationToken)
-        Await EnsureSuccessAsync(response, cancellationToken)
+        Dim response = Await _http.GetAsync(New Uri($"{_baseUrl}{relativeUrl}"), cancellationToken).ConfigureAwait(False)
+        Await EnsureSuccessAsync(response, cancellationToken).ConfigureAwait(False)
         Return response
     End Function
 
@@ -126,12 +129,12 @@ Public Class KindroidClient
 
         Dim body As String
         Try
-            body = Await response.Content.ReadAsStringAsync(cancellationToken)
-        Catch
+            body = Await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(False)
+        Catch ex As Exception
             body = String.Empty
+            Throw New KindroidException(CInt(response.StatusCode), body, ex)
         End Try
 
-        Throw New KindroidException(CInt(response.StatusCode), body)
     End Function
 #End Region
 
@@ -169,8 +172,8 @@ Public Class KindroidClient
             .Message = message,
             .Stream = False
         }
-        Using response = Await PostAsync("/send-message", req, cancellationToken, streamResponse:=False)
-            Return Await response.Content.ReadAsStringAsync(cancellationToken)
+        Using response = Await PostAsync("/send-message", req, cancellationToken, streamResponse:=False).ConfigureAwait(False)
+            Return Await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(False)
         End Using
     End Function
 
@@ -200,24 +203,23 @@ Public Class KindroidClient
                          Dim req As New SendMessageRequest() With {.AiId = aiId, .Message = message, .Stream = True}
 
                          ' Melakukan HTTP Post secara async
-                         response = Await PostAsync("/send-message", req, cancellationToken, streamResponse:=True)
+                         response = Await PostAsync("/send-message", req, cancellationToken, streamResponse:=True).ConfigureAwait(False)
 
                          ' Ambil enumerator dari StreamingHelper.ReadChunksAsync (hasil konversi sebelumnya)
                          Dim asyncSequence = StreamingHelper.ReadChunksAsync(response, cancellationToken)
                          Dim enumerator = asyncSequence.GetAsyncEnumerator(cancellationToken)
 
-                         Try
-                             ' VB.NET manual loop sebagai pengganti "Await Foreach" C#
-                             While Await enumerator.MoveNextAsync()
-                                 Dim chunk = enumerator.Current
-                                 ' Kirim chunk teks masuk ke dalam Channel
-                                 Await ch.Writer.WriteAsync(chunk, cancellationToken)
-                             End While
-                         Finally
-                             enumerator.DisposeAsync().AsTask().Wait()
-                         End Try
 
-                     Catch ex As Exception
+                         ' VB.NET manual loop sebagai pengganti "Await Foreach" C#
+                         While Await enumerator.MoveNextAsync().ConfigureAwait(False)
+                             Dim chunk = enumerator.Current
+                             ' Kirim chunk teks masuk ke dalam Channel
+                             Await ch.Writer.WriteAsync(chunk, cancellationToken).ConfigureAwait(False)
+                         End While
+
+                         Await enumerator.DisposeAsync().ConfigureAwait(False)
+
+                     Catch ex As KindroidException
                          ' Jika ada error (misal KindroidException atau putus koneksi), teruskan ke konsumen
                          ch.Writer.TryComplete(ex)
                          Return
@@ -270,7 +272,7 @@ Public Class KindroidClient
             .Greeting = greeting,
             .WipeCascaded = wipeCascaded
         }
-        Using response = Await PostAsync("/chat-break", req, cancellationToken, streamResponse:=False)
+        Using response = Await PostAsync("/chat-break", req, cancellationToken, streamResponse:=False).ConfigureAwait(False)
             ' No content expected, just ensure success or throw
         End Using
     End Function
@@ -306,7 +308,7 @@ Public Class KindroidClient
                                                Optional limit As Integer? = Nothing,
                                                Optional startAfterTimestamp As Long? = Nothing,
                                                Optional cancellationToken As CancellationToken = Nothing) As Task(Of GetChatMessagesResponse)
-        Return Await GetChatMessagesInternalAsync(aiId:=aiId, groupId:=Nothing, limit:=limit, startAfterTimestamp:=startAfterTimestamp, cancellationToken:=cancellationToken)
+        Return Await GetChatMessagesInternalAsync(aiId:=aiId, groupId:=Nothing, limit:=limit, startAfterTimestamp:=startAfterTimestamp, cancellationToken:=cancellationToken).ConfigureAwait(False)
     End Function
 
     ''' <summary>
@@ -338,7 +340,7 @@ Public Class KindroidClient
                                               Optional limit As Integer? = Nothing,
                                               Optional startAfterTimestamp As Long? = Nothing,
                                               Optional cancellationToken As CancellationToken = Nothing) As Task(Of GetChatMessagesResponse)
-        Return Await GetChatMessagesInternalAsync(aiId:=Nothing, groupId:=groupId, limit:=limit, startAfterTimestamp:=startAfterTimestamp, cancellationToken:=cancellationToken)
+        Return Await GetChatMessagesInternalAsync(aiId:=Nothing, groupId:=groupId, limit:=limit, startAfterTimestamp:=startAfterTimestamp, cancellationToken:=cancellationToken).ConfigureAwait(False)
     End Function
 
     Private Async Function GetChatMessagesInternalAsync(aiId As String, groupId As String, limit As Integer?,
@@ -358,8 +360,8 @@ Public Class KindroidClient
         If startAfterTimestamp.HasValue Then qs.Append($"start_after_timestamp={startAfterTimestamp.Value}&")
 
         Dim url = qs.ToString().TrimEnd("&"c)
-        Using response = Await GetAsync(url, cancellationToken)
-            Dim json = Await response.Content.ReadAsStringAsync(cancellationToken)
+        Using response = Await GetAsync(url, cancellationToken).ConfigureAwait(False)
+            Dim json = Await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(False)
             Return JsonSerializer.Deserialize(Of GetChatMessagesResponse)(json, JsonOpts)
         End Using
     End Function
@@ -400,7 +402,7 @@ Public Class KindroidClient
             .Count = count
         }
 
-        Using Await PostAsync("/rewind-messages", req, cancellationToken)
+        Using Await PostAsync("/rewind-messages", req, cancellationToken).ConfigureAwait(False)
             ' No need to put anything here
         End Using
     End Function
@@ -429,7 +431,7 @@ Public Class KindroidClient
                                                    count As Integer,
                                                    Optional cancellationToken As CancellationToken = Nothing) As Task
         Dim req As New RewindMessagesRequest() With {.GroupId = groupId, .Count = count}
-        Using Await PostAsync("/rewind-messages", req, cancellationToken)
+        Using Await PostAsync("/rewind-messages", req, cancellationToken).ConfigureAwait(False)
             ' No need to put anything here
         End Using
     End Function
@@ -459,7 +461,7 @@ Public Class KindroidClient
     Public Async Function UpdateAiInfoAsync(request As UpdateAiInfoRequest,
                             Optional cancellationToken As CancellationToken = Nothing) As Task
         ArgumentNullException.ThrowIfNull(request)
-        Using Await PostAsync("/update-info", request, cancellationToken)
+        Using Await PostAsync("/update-info", request, cancellationToken).ConfigureAwait(False)
             ' Nyenyenye
         End Using
     End Function
@@ -495,7 +497,7 @@ Public Class KindroidClient
                                                     message As String,
                                                     Optional cancellationToken As CancellationToken = Nothing) As Task
         Dim req As New GroupUserMessageRequest() With {.GroupId = groupId, .Message = message}
-        Using Await PostAsync("/groupchats-user-message", req, cancellationToken)
+        Using Await PostAsync("/groupchats-user-message", req, cancellationToken).ConfigureAwait(False)
             'huehuehue
         End Using
     End Function
@@ -508,7 +510,7 @@ Public Class KindroidClient
     ''' <param name="cancellationToken">Optional cancellation token.</param>
     ''' <exception cref="KindroidException">The API returned a non-success status.</exception>
     Public Sub GroupUserAudioMessage(groupId As String,
-                                          audioUrl As String,
+                                          audioUrl As Uri,
                                           Optional cancellationToken As CancellationToken = Nothing)
         GroupUserAudioMessageAsync(groupId, audioUrl, cancellationToken).GetAwaiter().GetResult()
     End Sub
@@ -521,10 +523,11 @@ Public Class KindroidClient
     ''' <param name="cancellationToken">Optional cancellation token.</param>
     ''' <exception cref="KindroidException">The API returned a non-success status.</exception>
     Public Async Function GroupUserAudioMessageAsync(groupId As String,
-                                                          audioUrl As String,
-                                                          Optional cancellationToken As CancellationToken = Nothing) As Task
-        Dim req As New GroupUserMessageRequest() With {.GroupId = groupId, .AudioUrl = audioUrl}
-        Using Await PostAsync("/groupchats-user-message", req, cancellationToken)
+                                                     audioUrl As Uri,
+                                                     Optional cancellationToken As CancellationToken = Nothing) As Task
+        ArgumentNullException.ThrowIfNullOrWhiteSpace(audioUrl?.AbsoluteUri)
+        Dim req As New GroupUserMessageRequest() With {.GroupId = groupId, .AudioUrl = audioUrl.AbsoluteUri}
+        Using Await PostAsync("/groupchats-user-message", req, cancellationToken).ConfigureAwait(False)
             'huehuehue
         End Using
     End Function
@@ -563,8 +566,8 @@ Public Class KindroidClient
                                                 Optional allowUser As Boolean = True,
                                                 Optional cancellationToken As CancellationToken = Nothing) As Task(Of GroupGetTurnResult)
         Dim req As New GroupGetTurnRequest() With {.GroupId = groupId, .AllowUser = allowUser}
-        Using response = Await PostAsync("/groupchats-get-turn", req, cancellationToken)
-            Dim body = (Await response.Content.ReadAsStringAsync(cancellationToken)).Trim()
+        Using response = Await PostAsync("/groupchats-get-turn", req, cancellationToken).ConfigureAwait(False)
+            Dim body = (Await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(False)).Trim()
             Return New GroupGetTurnResult(If(String.IsNullOrEmpty(body), Nothing, body))
         End Using
     End Function
@@ -597,8 +600,8 @@ Public Class KindroidClient
                                                     aiId As String,
                                                     Optional cancellationToken As CancellationToken = Nothing) As Task(Of String)
         Dim req As New GroupAiResponseRequest() With {.GroupId = groupId, .AiId = aiId, .Stream = False}
-        Using response = Await PostAsync("/groupchats-ai-response", req, cancellationToken, streamResponse:=False)
-            Return Await response.Content.ReadAsStringAsync(cancellationToken)
+        Using response = Await PostAsync("/groupchats-ai-response", req, cancellationToken, streamResponse:=False).ConfigureAwait(False)
+            Return Await response.Content.ReadAsStringAsync(cancellationToken).ConfigureAwait(False)
         End Using
     End Function
 
@@ -621,22 +624,22 @@ Public Class KindroidClient
                          Dim req As New GroupAiResponseRequest() With {.GroupId = groupId, .AiId = aiId, .Stream = True}
 
                          ' Await pertama: Request HTTP Post ke API Kindroid
-                         response = Await PostAsync("/groupchats-ai-response", req, cancellationToken, streamResponse:=True)
+                         response = Await PostAsync("/groupchats-ai-response", req, cancellationToken, streamResponse:=True).ConfigureAwait(False)
 
                          ' Ambil stream generator dari helper yang sudah kita buat sebelumnya
                          Dim asyncSequence = StreamingHelper.ReadChunksAsync(response, cancellationToken)
                          Dim enumerator = asyncSequence.GetAsyncEnumerator(cancellationToken)
 
                          ' Pengganti "Await foreach": Kita sebut "Manual Enumeration Loop"
-                         While Await enumerator.MoveNextAsync()
+                         While Await enumerator.MoveNextAsync().ConfigureAwait(False)
                              Dim chunk = enumerator.Current
 
                              ' Masukkan chunk teks yang didapat ke dalam pipa Channel
-                             Await ch.Writer.WriteAsync(chunk, cancellationToken)
+                             Await ch.Writer.WriteAsync(chunk, cancellationToken).ConfigureAwait(False)
                          End While
                          ' Wajib bersihkan enumerator stream setelah loop selesai
-                         Await enumerator.DisposeAsync()
-                     Catch ex As Exception
+                         Await enumerator.DisposeAsync().ConfigureAwait(False)
+                     Catch ex As KindroidException
                          ' Jika di tengah jalan API error/RTO, kirim error-nya ke pembaca loop
                          ch.Writer.TryComplete(ex)
                          Return
@@ -680,7 +683,7 @@ Public Class KindroidClient
         Dim req As New GroupChatBreakRequest() With {
                 .GroupId = groupId, .Greeting = greeting, .WipeCascaded = wipeCascaded
             }
-        Using Await PostAsync("/groupchats-chat-break", req, cancellationToken)
+        Using Await PostAsync("/groupchats-chat-break", req, cancellationToken).ConfigureAwait(False)
             ' huehuehue
         End Using
     End Function
@@ -705,7 +708,7 @@ Public Class KindroidClient
     Public Async Function UpdateGroupInfoAsync(request As UpdateGroupInfoRequest,
                                                     Optional cancellationToken As CancellationToken = Nothing) As Task
         ArgumentNullException.ThrowIfNull(request)
-        Using Await PostAsync("/groupchats-update", request, cancellationToken)
+        Using Await PostAsync("/groupchats-update", request, cancellationToken).ConfigureAwait(False)
             ' huehuehue
         End Using
     End Function
@@ -718,10 +721,16 @@ Public Class KindroidClient
 
     ''' <inheritdoc/>
     Public Sub Dispose() Implements IDisposable.Dispose
-        If _disposed Then Return
-        _disposed = True
-        If _ownsHttp Then _http.Dispose()
+        Dispose(True)
         GC.SuppressFinalize(Me)
+    End Sub
+
+    Protected Overridable Sub Dispose(disposing As Boolean)
+        If _disposed Then Return
+        If disposing Then
+            If _ownsHttp Then _http.Dispose()
+        End If
+        _disposed = True
     End Sub
 
 End Class

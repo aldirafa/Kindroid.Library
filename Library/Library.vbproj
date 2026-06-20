@@ -6,6 +6,22 @@
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <OptionStrict>On</OptionStrict>
     <OptionCompare>Text</OptionCompare>
+    <ImportedNamespaces>Kindroid.Library=False,Kindroid.Library.Exceptions=False,Kindroid.Library.Models=False,Kindroid.Library.My=False,Kindroid.Library.Streaming=False,Microsoft.VisualBasic=True,System=True,System.Collections=True,System.Collections.Generic=True,System.Diagnostics=True,System.Linq=True,System.Xml.Linq=True,System.Threading.Tasks=True,Library=True</ImportedNamespaces>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <PackageId>Kindroid.Library</PackageId>
+    <Title>.NET Library for Kindroid AI Public REST API</Title>
+    <Authors>Aldian Hudaya</Authors>
+    <Company />
+    <Product>Kindroid.Library</Product>
+    <Description>An unofficial .NET client library for the Kindroid AI public REST API written in Visual Basic .NET</Description>
+    <PackageProjectUrl>https://github.com/aldirafa/Kindroid.Library</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/aldirafa/Kindroid.Library</RepositoryUrl>
+    <PackageTags>kindroid; vbnet; net; restapi</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+    <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
+    <AnalysisLevel>latest-all</AnalysisLevel>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -16,5 +32,20 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Import Include="Kindroid.Library" />
+    <Import Include="Kindroid.Library.Exceptions" />
+    <Import Include="Kindroid.Library.Models" />
+    <Import Include="Kindroid.Library.My" />
+    <Import Include="Kindroid.Library.Streaming" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
 
 </Project>

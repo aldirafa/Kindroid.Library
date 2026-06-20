@@ -27,29 +27,29 @@ Namespace Streaming
 
             Task.Run(Async Function()
                          Try
-                             Using stream As Stream = Await response.Content.ReadAsStreamAsync(cancellationToken)
+                             Using stream As Stream = Await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(False)
 
                                  Using reader As New StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks:=False, bufferSize:=1024, leaveOpen:=True)
 
                                      Dim buffer(4095) As Char
 
                                      ' Initialize by reading the first chunk
-                                     Dim charsRead As Integer = Await reader.ReadAsync(buffer, cancellationToken)
+                                     Dim charsRead As Integer = Await reader.ReadAsync(buffer, cancellationToken).ConfigureAwait(False)
 
                                      ' Loop while we have data
                                      While charsRead > 0
                                          Dim chunk = New String(buffer, 0, charsRead)
                                          If Not String.IsNullOrWhiteSpace(chunk) Then
-                                             Await ch.Writer.WriteAsync(chunk, cancellationToken)
+                                             Await ch.Writer.WriteAsync(chunk, cancellationToken).ConfigureAwait(False)
                                          End If
                                          ' Read the next chunk
-                                         charsRead = Await reader.ReadAsync(buffer, cancellationToken)
+                                         charsRead = Await reader.ReadAsync(buffer, cancellationToken).ConfigureAwait(False)
                                      End While
 
                                  End Using
 
                              End Using
-                         Catch ex As Exception
+                         Catch ex As KindroidException
                              ch.Writer.TryComplete(ex)
                              Return
                          Finally

@@ -1,6 +1,8 @@
 # Kindroid.Library
 
-A VB.NET client library for the [Kindroid AI](https://kindroid.ai) public REST API. It wraps every documented endpoint — single-AI chat, group chat, streaming replies, and chat history management — in a single `KindroidClient` class, with each operation exposed in **synchronous**, **async**, and (where supported) **streaming** form.
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Y0F020WAJC)
+
+`Kindroid.Library` is an unofficial .NET client library for the [Kindroid AI](https://kindroid.ai) public REST API written in Visual Basic .NET. It wraps every documented endpoint — single-AI chat, group chat, streaming replies, and chat history management — in a single `KindroidClient` class, with each operation exposed in **synchronous**, **async**, and (where supported) **streaming** form.
 
 > **Note:** This is a third-party / community client, not an official Kindroid SDK.
 
@@ -33,16 +35,15 @@ A VB.NET client library for the [Kindroid AI](https://kindroid.ai) public REST A
 Clone or download this repository and add `Kindroid.Library` as a project reference in your solution.
 
 ```
-git clone https://github.com/<your-org>/<your-repo>.git
+gh repo clone aldirafa/Kindroid.Library
 ```
 
-**Option B — NuGet** *(if you publish this package)*
+**Option B — NuGet**
 
 ```
 dotnet add package Kindroid.Library
 ```
 
-> Replace the package ID above with whatever you publish it under — it isn't a real package yet, this is just a placeholder command.
 
 ## Quickstart
 
@@ -92,7 +93,7 @@ End Try
 
 ## License
 
-This project is made available under the [MIT License](LICENSE) *(assumed — swap this out for whatever license you actually want to ship with)*.
+This project is made available under the [MIT License](LICENSE).
 
 ## Contributing
 
