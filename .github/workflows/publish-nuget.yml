@@ -58,7 +58,7 @@ jobs:
         run: dotnet restore Library/Library.vbproj
 
       - name: Build
-        run: dotnet build Library/Library.vbproj
+        run: dotnet build Library/Library.vbproj --configuration Release
 
       - name: Pack
         run: >
