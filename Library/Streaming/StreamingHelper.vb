@@ -1,66 +1,44 @@
 ﻿Imports System.IO
-Imports System.Net.Http
 Imports System.Text
 Imports System.Threading
-Imports System.Threading.Channels
 
 Namespace Streaming
 
     ''' <summary>
-    ''' Provides helpers to consume a plain-text streaming HTTP response as an <see cref="IAsyncEnumerable(Of String)"/> of
-    ''' text chunks.
+    ''' Helpers for reading the raw-text streaming responses of the Kindroid API.
+    ''' <para>
+    ''' Observed behaviour: the body is <c>text/event-stream</c> but contains plain text (no SSE framing). Chunks are
+    ''' arbitrary token fragments, and whitespace-only chunks (even a lone space) are part of the reply, so nothing may
+    ''' be filtered out. Multi-byte characters can be split between reads, hence the stateful <see cref="StreamReader"/>.
+    ''' </para>
     ''' </summary>
     Friend Module StreamingHelper
 
+        ''' <summary>Size of the character buffer used for each read.</summary>
+        Friend Const BufferSize As Integer = 4096
+
         ''' <summary>
-        ''' Reads a streaming <see cref="HttpResponseMessage"/> and yields each non-empty text chunk as it arrives.
+        ''' Creates a UTF-8 reader over the response stream that correctly handles characters split across reads.
         ''' </summary>
-        ''' <param name="response">A successful streaming response from the Kindroid API.</param>
-        ''' <param name="cancellationToken">Token to cancel the enumeration.</param>
-        ''' <returns>An async sequence of text chunks.</returns>
-        Public Function ReadChunksAsync(response As HttpResponseMessage,
-                                        Optional cancellationToken As CancellationToken = Nothing) As IAsyncEnumerable(Of String)
-
-            Dim ch = Channel.CreateUnbounded(Of String)(New UnboundedChannelOptions With {
-                                                        .SingleReader = True,
-                                                        .SingleWriter = True})
-
-            Task.Run(Async Function()
-                         Try
-                             Using stream As Stream = Await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(False)
-
-                                 Using reader As New StreamReader(stream, Encoding.UTF8, detectEncodingFromByteOrderMarks:=False, bufferSize:=1024, leaveOpen:=True)
-
-                                     Dim buffer(4095) As Char
-
-                                     ' Initialize by reading the first chunk
-                                     Dim charsRead As Integer = Await reader.ReadAsync(buffer, cancellationToken).ConfigureAwait(False)
-
-                                     ' Loop while we have data
-                                     While charsRead > 0
-                                         Dim chunk = New String(buffer, 0, charsRead)
-                                         If Not String.IsNullOrWhiteSpace(chunk) Then
-                                             Await ch.Writer.WriteAsync(chunk, cancellationToken).ConfigureAwait(False)
-                                         End If
-                                         ' Read the next chunk
-                                         charsRead = Await reader.ReadAsync(buffer, cancellationToken).ConfigureAwait(False)
-                                     End While
-
-                                 End Using
-
-                             End Using
-                         Catch ex As KindroidException
-                             ch.Writer.TryComplete(ex)
-                             Return
-                         Finally
-                             ch.Writer.Complete()
-                         End Try
-
-                     End Function, cancellationToken)
-
-            Return ch.Reader.ReadAllAsync(cancellationToken)
-
+        ''' <param name="stream">The response stream.</param>
+        ''' <returns>A <see cref="StreamReader"/> that leaves no BOM detection side effects.</returns>
+        Friend Function CreateReader(stream As Stream) As StreamReader
+            Return New StreamReader(stream, New UTF8Encoding(encoderShouldEmitUTF8Identifier:=False), detectEncodingFromByteOrderMarks:=False, bufferSize:=1024, leaveOpen:=False)
         End Function
+
+        ''' <summary>
+        ''' Reads the next chunk of text, including whitespace-only chunks.
+        ''' </summary>
+        ''' <param name="reader">The reader created by <see cref="CreateReader(Stream)"/>.</param>
+        ''' <param name="buffer">Scratch buffer of <see cref="BufferSize"/> characters.</param>
+        ''' <param name="cancellationToken">Token to cancel the read.</param>
+        ''' <returns>The next chunk, or <see langword="Nothing"/> at the end of the stream.</returns>
+        Friend Async Function ReadChunkAsync(reader As StreamReader, buffer As Char(), cancellationToken As CancellationToken) As Task(Of String)
+            Dim count = Await reader.ReadAsync(buffer.AsMemory(), cancellationToken).ConfigureAwait(False)
+            If count = 0 Then Return Nothing
+            Return New String(buffer, 0, count)
+        End Function
+
     End Module
 
 End Namespace

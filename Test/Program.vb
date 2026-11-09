@@ -17,6 +17,12 @@ Module Program
 
     Private Async Function MainAsync(args As String()) As Task
 
+        ' `dotnet run --project Test -- probe <scenario>` -> non-interactive live probes (see Probe.vb)
+        If args.Length > 0 AndAlso args(0).Equals("probe", StringComparison.OrdinalIgnoreCase) Then
+            Await Probe.RunAsync(args, "DP2H5DWmazM0uVuWlkDt", "Trluu6KRaMkw4orIgjK7")
+            Return
+        End If
+
         System.Console.OutputEncoding = System.Text.Encoding.UTF8
         System.Console.InputEncoding = System.Text.Encoding.UTF8
 
@@ -28,8 +34,9 @@ Module Program
 
         ' ====== Setup Client ==============================
         ' args = aiId
-        Dim aiId As String = "g4f5wrgPRhkA4B8M0AzH"
-        Dim aiName As String = "Mike"
+        Dim aiId As String = "DP2H5DWmazM0uVuWlkDt"
+        Dim aiName As String = "萧衍"
+        Dim groupId As String = "Trluu6KRaMkw4orIgjK7" ' Buat ngetes group
         If args.Length = 1 Then
             aiId = args(0)
         End If
