@@ -30,7 +30,7 @@ jobs:
         run: dotnet restore Kindroid.slnx
 
       - name: Run tests
-        run: dotnet test Test/Test.vbproj --configuration Release --no-restore
+        run: dotnet test Library.Tests/Library.Tests.vbproj --configuration Release --no-restore
 
   publish:
     name: Pack & Publish
