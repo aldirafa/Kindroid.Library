@@ -86,9 +86,10 @@ Namespace Models
         Public Property Sender As String = String.Empty
 
         ''' <summary>
-        ''' Type of the sender.
+        ''' Type of the sender. The server documents this field but was <b>not observed to send it</b>;
+        ''' prefer <see cref="Sender"/> / <see cref="IsFromUser"/> / <see cref="IsFromAi"/>.
         ''' </summary>
-        ''' <returns>A <see cref="String"/> representing the type of the sender.</returns>
+        ''' <returns>A <see cref="String"/> representing the type of the sender, or an empty string when absent.</returns>
         <JsonPropertyName("sender_type")>
         Public Property SenderType As String = String.Empty
 
@@ -114,11 +115,20 @@ Namespace Models
         Public Property Message As String = String.Empty
 
         ''' <summary>
-        ''' A list of URLs of images attached to/sent with the message.
+        ''' A list of images attached to/sent with the message. The server sends <c>null</c> when there are none; it is exposed as an empty collection. <b>The entries are opaque encrypted tokens (they start with <c>!enc:</c>), not browsable URLs</b>; use <see cref="ImageDescription"/> to know what the image shows.
         ''' </summary>
         ''' <returns>A list of strings representing the URLs of images attached to/sent with the message.</returns>
         <JsonPropertyName("image_urls")>
-        Public ReadOnly Property ImageUrls As Collection(Of String) = New Collection(Of String)()
+        <System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2227:Collection properties should be read-only", Justification:="Needed so JSON deserialization can assign it, and so a server-sent null (observed) becomes an empty collection.")>
+        Public Property ImageUrls As Collection(Of String)
+            Get
+                Return _imageUrls
+            End Get
+            Set(value As Collection(Of String))
+                _imageUrls = If(value, New Collection(Of String)())
+            End Set
+        End Property
+        Private _imageUrls As Collection(Of String) = New Collection(Of String)()
 
         ''' <summary>
         ''' A description of the image(s) attached to/sent with the message, if any.
@@ -158,6 +168,48 @@ Namespace Models
         <JsonPropertyName("link_description")>
         Public Property LinkDescription As String = String.Empty
 
+        ''' <summary>
+        ''' The name of a document (for example <c>TUGAS 1.docx</c>) attached to the message, if any.
+        ''' This field is not in Kindroid's published API reference; it was observed on live responses.
+        ''' Only the file name is returned, not its content.
+        ''' </summary>
+        ''' <returns>A <see cref="String"/> representing the attached file's name, or an empty string when absent.</returns>
+        <JsonPropertyName("file_name")>
+        Public Property FileName As String = String.Empty
+
+        ''' <summary>
+        ''' <see langword="True"/> when <see cref="Sender"/> is <c>"user"</c>.
+        ''' </summary>
+        ''' <returns>A <see cref="Boolean"/> indicating whether the user wrote the message.</returns>
+        <JsonIgnore>
+        Public ReadOnly Property IsFromUser As Boolean
+            Get
+                Return String.Equals(Sender, "user", StringComparison.OrdinalIgnoreCase)
+            End Get
+        End Property
+
+        ''' <summary>
+        ''' <see langword="True"/> when <see cref="Sender"/> is <c>"ai"</c>.
+        ''' </summary>
+        ''' <returns>A <see cref="Boolean"/> indicating whether an AI wrote the message.</returns>
+        <JsonIgnore>
+        Public ReadOnly Property IsFromAi As Boolean
+            Get
+                Return String.Equals(Sender, "ai", StringComparison.OrdinalIgnoreCase)
+            End Get
+        End Property
+
+        ''' <summary>
+        ''' <see cref="Timestamp"/> converted to a <see cref="DateTimeOffset"/>.
+        ''' </summary>
+        ''' <returns>The moment the message was sent (UTC).</returns>
+        <JsonIgnore>
+        Public ReadOnly Property SentAt As DateTimeOffset
+            Get
+                Return DateTimeOffset.FromUnixTimeMilliseconds(Timestamp)
+            End Get
+        End Property
+
     End Class
 
     ''' <summary>
@@ -173,11 +225,13 @@ Namespace Models
         Public Property HasMore As Boolean
 
         ''' <summary>
-        ''' The timestamp of the last message in the current page.
+        ''' The timestamp (Unix milliseconds) of the last message in the current page. Pass it as the
+        ''' <c>startAfterTimestamp</c> cursor to fetch the next page.
+        ''' The server returns <see langword="Nothing"/> (JSON <c>null</c>) when the page is empty.
         ''' </summary>
-        ''' <returns>A long representing the Unix timestamp of the last message in the current page.</returns>
+        ''' <returns>A nullable long representing the Unix timestamp of the last message in the current page.</returns>
         <JsonPropertyName("lastTimestamp")>
-        Public Property LastTimestamp As Long
+        Public Property LastTimestamp As Long?
 
         ''' <summary>
         ''' How many messages to return per page.
@@ -198,7 +252,16 @@ Namespace Models
         ''' </summary>
         ''' <returns>A list of <see cref="ChatMessage"/> objects representing the messages in the current page.</returns>
         <JsonPropertyName("messages")>
-        Public ReadOnly Property Messages As Collection(Of ChatMessage) = New Collection(Of ChatMessage)()
+        <System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2227:Collection properties should be read-only", Justification:="Needed so JSON deserialization can assign it; a null from the server becomes an empty collection.")>
+        Public Property Messages As Collection(Of ChatMessage)
+            Get
+                Return _messages
+            End Get
+            Set(value As Collection(Of ChatMessage))
+                _messages = If(value, New Collection(Of ChatMessage)())
+            End Set
+        End Property
+        Private _messages As Collection(Of ChatMessage) = New Collection(Of ChatMessage)()
 
         ''' <summary>
         ''' Pagination metadata for the current page of messages.

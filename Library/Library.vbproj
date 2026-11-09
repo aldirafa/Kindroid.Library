@@ -2,6 +2,8 @@
 
   <PropertyGroup>
     <RootNamespace>Kindroid.Library</RootNamespace>
+    <Version>2.0.0</Version>
+    <PackageReleaseNotes>2.0.0 is a breaking release: API errors now throw (they were silently returned as text before), streaming no longer hangs or drops whitespace, chat history now deserializes. See CHANGELOG.md.</PackageReleaseNotes>
     <TargetFramework>net10.0</TargetFramework>
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
     <OptionStrict>On</OptionStrict>

@@ -5,4 +5,5 @@
   </Folder>
   <Project Path="Library/Library.vbproj" />
   <Project Path="Test/Test.vbproj" />
+  <Project Path="Library.Tests/Library.Tests.vbproj" />
 </Solution>
